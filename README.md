@@ -1,0 +1,219 @@
+
+# slog: Kafka handler
+
+[![tag](https://img.shields.io/github/tag/samber/slog-kafka.svg)](https://github.com/samber/slog-kafka/releases)
+![Go Version](https://img.shields.io/badge/Go-%3E%3D%201.20.3-%23007d9c)
+[![GoDoc](https://godoc.org/github.com/samber/slog-kafka?status.svg)](https://pkg.go.dev/github.com/samber/slog-kafka)
+![Build Status](https://github.com/samber/slog-kafka/actions/workflows/test.yml/badge.svg)
+[![Go report](https://goreportcard.com/badge/github.com/samber/slog-kafka)](https://goreportcard.com/report/github.com/samber/slog-kafka)
+[![Coverage](https://img.shields.io/codecov/c/github/samber/slog-kafka)](https://codecov.io/gh/samber/slog-kafka)
+[![Contributors](https://img.shields.io/github/contributors/samber/slog-kafka)](https://github.com/samber/slog-kafka/graphs/contributors)
+[![License](https://img.shields.io/github/license/samber/slog-kafka)](./LICENSE)
+
+A [Kafka](https://kafka.apache.org) Handler for [slog](https://pkg.go.dev/golang.org/x/exp/slog) Go library.
+
+**See also:**
+
+- [slog-multi](https://github.com/samber/slog-formatter): `slog.Handler` chaining, fanout, routing, failover, load balancing...
+- [slog-formatter](https://github.com/samber/slog-formatter): `slog` attribute formatting
+- [slog-gin](https://github.com/samber/slog-gin): Gin middleware for `slog` logger
+- [slog-echo](https://github.com/samber/slog-echo): Echo middleware for `slog` logger
+- [slog-fiber](https://github.com/samber/slog-fiber): Fiber middleware for `slog` logger
+- [slog-datadog](https://github.com/samber/slog-datadog): A `slog` handler for `Datadog`
+- [slog-rollbar](https://github.com/samber/slog-rollbar): A `slog` handler for `Rollbar`
+- [slog-sentry](https://github.com/samber/slog-sentry): A `slog` handler for `Sentry`
+- [slog-syslog](https://github.com/samber/slog-syslog): A `slog` handler for `Syslog`
+- [slog-logstash](https://github.com/samber/slog-logstash): A `slog` handler for `Logstash`
+- [slog-fluentd](https://github.com/samber/slog-fluentd): A `slog` handler for `Fluentd`
+- [slog-graylog](https://github.com/samber/slog-graylog): A `slog` handler for `Graylog`
+- [slog-loki](https://github.com/samber/slog-loki): A `slog` handler for `Loki`
+- [slog-slack](https://github.com/samber/slog-slack): A `slog` handler for `Slack`
+- [slog-telegram](https://github.com/samber/slog-telegram): A `slog` handler for `Telegram`
+- [slog-mattermost](https://github.com/samber/slog-mattermost): A `slog` handler for `Mattermost`
+- [slog-microsoft-teams](https://github.com/samber/slog-microsoft-teams): A `slog` handler for `Microsoft Teams`
+- [slog-webhook](https://github.com/samber/slog-webhook): A `slog` handler for `Webhook`
+- [slog-kafka](https://github.com/samber/slog-kafka): A `slog` handler for `Kafka`
+
+## 🚀 Install
+
+```sh
+go get github.com/samber/slog-kafka
+```
+
+**Compatibility**: go >= 1.20.3
+
+This library is v0 and follows SemVer strictly. On `slog` final release (go 1.21), this library will go v1.
+
+No breaking changes will be made to exported APIs before v1.0.0.
+
+## 💡 Usage
+
+GoDoc: [https://pkg.go.dev/github.com/samber/slog-kafka](https://pkg.go.dev/github.com/samber/slog-kafka)
+
+### Handler options
+
+```go
+type Option struct {
+    // log level (default: debug)
+	Level     slog.Leveler
+
+	// Kafka Writer
+	KafkaWriter *kafka.Writer
+
+	// optional: customize Kafka event builder
+	Converter Converter
+}
+```
+
+### Supported attributes
+
+The following attributes are interpreted by `slogkafka.DefaultConverter`:
+
+| Atribute name    | `slog.Kind`       | Underlying type |
+| ---------------- | ----------------- | --------------- |
+| "user"           | group (see below) |                 |
+| "error"          | any               | `error`         |
+| "request"        | any               | `*http.Request` |
+| other attributes | *                 |                 |
+
+Other attributes will be injected in `extra` field.
+
+Users must be of type `slog.Group`. Eg:
+
+```go
+slog.Group("user",
+    slog.String("id", "user-123"),
+    slog.String("username", "samber"),
+    slog.Time("created_at", time.Now()),
+)
+```
+
+### Example
+
+```go
+import (
+	"context"
+	"fmt"
+	"time"
+
+	slogkafka "github.com/samber/slog-kafka"
+	"github.com/segmentio/kafka-go"
+
+	"golang.org/x/exp/slog"
+)
+
+func main() {
+	// docker-compose up -d
+
+	uri := "127.0.0.1:9092"
+
+	dialer := &kafka.Dialer{
+		Timeout:   10 * time.Second,
+		DualStack: true,
+	}
+
+	conn, err := dialer.DialContext(context.Background(), "tcp", uri)
+	if err != nil {
+		panic(err)
+	}
+
+	err = conn.CreateTopics(kafka.TopicConfig{
+		Topic:             "logs",
+		NumPartitions:     12,
+		ReplicationFactor: 1,
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	writer := kafka.NewWriter(kafka.WriterConfig{
+		Brokers: []string{uri},
+		Topic:   "logs",
+		Dialer:  dialer,
+
+		Async:       true,
+		Balancer:    &kafka.Hash{},
+		MaxAttempts: 3,
+
+		Logger: kafka.LoggerFunc(func(msg string, args ...interface{}) {
+			fmt.Printf(msg+"\n", args...)
+		}),
+		ErrorLogger: kafka.LoggerFunc(func(msg string, args ...interface{}) {
+			fmt.Printf(msg+"\n", args...)
+		}),
+	})
+
+	defer writer.Close()
+	defer conn.Close()
+
+	logger := slog.New(slogkafka.Option{Level: slog.LevelDebug, KafkaWriter: writer}.NewKafkaHandler())
+	logger = logger.With("release", "v1.0.0")
+
+	logger.
+		With(
+			slog.Group("user",
+				slog.String("id", "user-123"),
+				slog.Time("created_at", time.Now()),
+			),
+		).
+		With("error", fmt.Errorf("an error")).
+		Error("a message")
+}
+```
+
+Kafka message:
+
+```json
+{
+  "level": "ERROR",
+	"logger": "samber/slog-kafka",
+	"message": "a message",
+	"timestamp": "2023-04-30T01:33:21.676768Z",
+	"error": {
+		"error": "an error",
+		"kind": "*errors.errorString",
+		"stack": null
+	},
+	"extra": {
+		"release": "v1.0.0"
+	},
+	"user": {
+		"created_at": "2023-04-30T01:33:21.676704Z",
+		"id": "user-123"
+	}
+}
+```
+
+## 🤝 Contributing
+
+- Ping me on twitter [@samuelberthe](https://twitter.com/samuelberthe) (DMs, mentions, whatever :))
+- Fork the [project](https://github.com/samber/slog-kafka)
+- Fix [open issues](https://github.com/samber/slog-kafka/issues) or request new features
+
+Don't hesitate ;)
+
+```bash
+# Install some dev dependencies
+make tools
+
+# Run tests
+make test
+# or
+make watch-test
+```
+
+## 👤 Contributors
+
+![Contributors](https://contrib.rocks/image?repo=samber/slog-kafka)
+
+## 💫 Show your support
+
+Give a ⭐️ if this project helped you!
+
+[![GitHub Sponsors](https://img.shields.io/github/sponsors/samber?style=for-the-badge)](https://github.com/sponsors/samber)
+
+## 📝 License
+
+Copyright © 2023 [Samuel Berthe](https://github.com/samber).
+
+This project is [MIT](./LICENSE) licensed.
