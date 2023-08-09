@@ -8,7 +8,7 @@ import (
 	slogkafka "github.com/samber/slog-kafka"
 	"github.com/segmentio/kafka-go"
 
-	"golang.org/x/exp/slog"
+	"log/slog"
 )
 
 func main() {

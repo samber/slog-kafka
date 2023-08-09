@@ -5,8 +5,9 @@ import (
 	"encoding/json"
 	"time"
 
+	"log/slog"
+
 	"github.com/segmentio/kafka-go"
-	"golang.org/x/exp/slog"
 )
 
 type Option struct {
