@@ -37,6 +37,8 @@ func (o Option) NewKafkaHandler() slog.Handler {
 	}
 }
 
+var _ slog.Handler = (*KafkaHandler)(nil)
+
 type KafkaHandler struct {
 	option Option
 	attrs  []slog.Attr
