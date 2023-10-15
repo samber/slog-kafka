@@ -65,7 +65,21 @@ type Option struct {
 
 	// optional: customize Kafka event builder
 	Converter Converter
+
+	// optional: see slog.HandlerOptions
+	AddSource   bool
+	ReplaceAttr func(groups []string, a slog.Attr) slog.Attr
 }
+```
+
+Other global parameters:
+
+```go
+slogkafka.SourceKey = "source"
+slogkafka.ContextKey = "extra"
+slogkafka.RequestKey = "request"
+slogkafka.ErrorKeys = []string{"error", "err"}
+slogkafka.RequestIgnoreHeaders = false
 ```
 
 ### Supported attributes

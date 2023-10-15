@@ -7,6 +7,7 @@ import (
 
 	"log/slog"
 
+	slogcommon "github.com/samber/slog-common"
 	"github.com/segmentio/kafka-go"
 )
 
@@ -19,6 +20,10 @@ type Option struct {
 
 	// optional: customize Kafka event builder
 	Converter Converter
+
+	// optional: see slog.HandlerOptions
+	AddSource   bool
+	ReplaceAttr func(groups []string, a slog.Attr) slog.Attr
 }
 
 func (o Option) NewKafkaHandler() slog.Handler {
@@ -55,7 +60,7 @@ func (h *KafkaHandler) Handle(ctx context.Context, record slog.Record) error {
 		converter = h.option.Converter
 	}
 
-	payload := converter(h.attrs, record)
+	payload := converter(h.option.AddSource, h.option.ReplaceAttr, h.attrs, h.groups, &record)
 
 	return h.publish(record.Time, payload)
 }
@@ -63,7 +68,7 @@ func (h *KafkaHandler) Handle(ctx context.Context, record slog.Record) error {
 func (h *KafkaHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
 	return &KafkaHandler{
 		option: h.option,
-		attrs:  appendAttrsToGroup(h.groups, h.attrs, attrs),
+		attrs:  slogcommon.AppendAttrsToGroup(h.groups, h.attrs, attrs...),
 		groups: h.groups,
 	}
 }
