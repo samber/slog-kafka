@@ -57,7 +57,7 @@ GoDoc: [https://pkg.go.dev/github.com/samber/slog-kafka](https://pkg.go.dev/gith
 
 ```go
 type Option struct {
-    // log level (default: debug)
+	// log level (default: debug)
 	Level     slog.Leveler
 
 	// Kafka Writer
