@@ -43,16 +43,16 @@ A [Kafka](https://kafka.apache.org) Handler for [slog](https://pkg.go.dev/log/sl
 ## 🚀 Install
 
 ```sh
-go get github.com/samber/slog-kafka
+go get github.com/samber/slog-kafka/v2
 ```
 
 **Compatibility**: go >= 1.21
 
-No breaking changes will be made to exported APIs before v2.0.0.
+No breaking changes will be made to exported APIs before v3.0.0.
 
 ## 💡 Usage
 
-GoDoc: [https://pkg.go.dev/github.com/samber/slog-kafka](https://pkg.go.dev/github.com/samber/slog-kafka)
+GoDoc: [https://pkg.go.dev/github.com/samber/slog-kafka/v2](https://pkg.go.dev/github.com/samber/slog-kafka/v2)
 
 ### Handler options
 
@@ -114,7 +114,7 @@ import (
 	"fmt"
 	"time"
 
-	slogkafka "github.com/samber/slog-kafka"
+	slogkafka "github.com/samber/slog-kafka/v2"
 	"github.com/segmentio/kafka-go"
 
 	"log/slog"
