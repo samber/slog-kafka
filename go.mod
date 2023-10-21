@@ -1,4 +1,4 @@
-module github.com/samber/slog-kafka
+module github.com/samber/slog-kafka/v2
 
 go 1.21
 

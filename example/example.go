@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	slogkafka "github.com/samber/slog-kafka"
+	slogkafka "github.com/samber/slog-kafka/v2"
 	"github.com/segmentio/kafka-go"
 
 	"log/slog"
