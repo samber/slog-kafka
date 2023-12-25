@@ -62,7 +62,7 @@ func (h *KafkaHandler) Handle(ctx context.Context, record slog.Record) error {
 
 	payload := converter(h.option.AddSource, h.option.ReplaceAttr, h.attrs, h.groups, &record)
 
-	return h.publish(record.Time, payload)
+	return h.publish(ctx, record.Time, payload)
 }
 
 func (h *KafkaHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
@@ -81,7 +81,7 @@ func (h *KafkaHandler) WithGroup(name string) slog.Handler {
 	}
 }
 
-func (h *KafkaHandler) publish(timestamp time.Time, payload map[string]interface{}) error {
+func (h *KafkaHandler) publish(ctx context.Context, timestamp time.Time, payload map[string]interface{}) error {
 	key, err := timestamp.MarshalBinary()
 	if err != nil {
 		return err
@@ -93,7 +93,7 @@ func (h *KafkaHandler) publish(timestamp time.Time, payload map[string]interface
 	}
 
 	return h.option.KafkaWriter.WriteMessages(
-		context.Background(),
+		ctx,
 		kafka.Message{
 			Key:   key,
 			Value: values,
