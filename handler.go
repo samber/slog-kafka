@@ -17,6 +17,7 @@ type Option struct {
 
 	// Kafka Writer
 	KafkaWriter *kafka.Writer
+	Timeout     time.Duration // default: 60s
 
 	// optional: customize Kafka event builder
 	Converter Converter
@@ -33,6 +34,10 @@ func (o Option) NewKafkaHandler() slog.Handler {
 
 	if o.KafkaWriter == nil {
 		panic("missing Kafka writer")
+	}
+
+	if o.Timeout == 0 {
+		o.Timeout = 60 * time.Second
 	}
 
 	return &KafkaHandler{
@@ -62,7 +67,7 @@ func (h *KafkaHandler) Handle(ctx context.Context, record slog.Record) error {
 
 	payload := converter(h.option.AddSource, h.option.ReplaceAttr, h.attrs, h.groups, &record)
 
-	return h.publish(ctx, record.Time, payload)
+	return h.publish(record.Time, payload)
 }
 
 func (h *KafkaHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
@@ -81,7 +86,7 @@ func (h *KafkaHandler) WithGroup(name string) slog.Handler {
 	}
 }
 
-func (h *KafkaHandler) publish(ctx context.Context, timestamp time.Time, payload map[string]interface{}) error {
+func (h *KafkaHandler) publish(timestamp time.Time, payload map[string]interface{}) error {
 	key, err := timestamp.MarshalBinary()
 	if err != nil {
 		return err
@@ -91,6 +96,9 @@ func (h *KafkaHandler) publish(ctx context.Context, timestamp time.Time, payload
 	if err != nil {
 		return err
 	}
+
+	// we ignore cancel, since the call to WriteMessages might be non-blocking
+	ctx, _ := context.WithTimeout(context.Background(), h.option.Timeout) //nolint:lostcancel
 
 	return h.option.KafkaWriter.WriteMessages(
 		ctx,

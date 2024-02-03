@@ -65,6 +65,7 @@ type Option struct {
 
 	// Kafka Writer
 	KafkaWriter *kafka.Writer
+	Timeout time.Duration // default: 60s
 
 	// optional: customize Kafka event builder
 	Converter Converter
