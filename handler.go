@@ -40,6 +40,10 @@ func (o Option) NewKafkaHandler() slog.Handler {
 		o.Timeout = 60 * time.Second
 	}
 
+	if o.Converter == nil {
+		o.Converter = DefaultConverter
+	}
+
 	return &KafkaHandler{
 		option: o,
 		attrs:  []slog.Attr{},
@@ -60,12 +64,7 @@ func (h *KafkaHandler) Enabled(_ context.Context, level slog.Level) bool {
 }
 
 func (h *KafkaHandler) Handle(ctx context.Context, record slog.Record) error {
-	converter := DefaultConverter
-	if h.option.Converter != nil {
-		converter = h.option.Converter
-	}
-
-	payload := converter(h.option.AddSource, h.option.ReplaceAttr, h.attrs, h.groups, &record)
+	payload := h.option.Converter(h.option.AddSource, h.option.ReplaceAttr, h.attrs, h.groups, &record)
 
 	return h.publish(record.Time, payload)
 }
