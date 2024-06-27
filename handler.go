@@ -93,12 +93,12 @@ func (h *KafkaHandler) WithGroup(name string) slog.Handler {
 }
 
 func (h *KafkaHandler) publish(timestamp time.Time, payload map[string]interface{}) error {
-	// bearer:disable go_lang_deserialization_of_user_input
 	key, err := timestamp.MarshalBinary()
 	if err != nil {
 		return err
 	}
 
+	// bearer:disable go_lang_deserialization_of_user_input
 	values, err := json.Marshal(payload)
 	if err != nil {
 		return err
