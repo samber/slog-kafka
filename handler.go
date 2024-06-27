@@ -93,6 +93,7 @@ func (h *KafkaHandler) WithGroup(name string) slog.Handler {
 }
 
 func (h *KafkaHandler) publish(timestamp time.Time, payload map[string]interface{}) error {
+	// bearer:disable go_lang_deserialization_of_user_input
 	key, err := timestamp.MarshalBinary()
 	if err != nil {
 		return err
@@ -104,7 +105,8 @@ func (h *KafkaHandler) publish(timestamp time.Time, payload map[string]interface
 	}
 
 	// we ignore cancel, since the call to WriteMessages might be non-blocking
-	ctx, _ := context.WithTimeout(context.Background(), h.option.Timeout) //nolint:lostcancel
+	ctx, cancel := context.WithTimeout(context.Background(), h.option.Timeout) //nolint:lostcancel
+	defer cancel()
 
 	return h.option.KafkaWriter.WriteMessages(
 		ctx,
