@@ -27,6 +27,8 @@ type Option struct {
 	// optional: see slog.HandlerOptions
 	AddSource   bool
 	ReplaceAttr func(groups []string, a slog.Attr) slog.Attr
+
+	Marshal func(v any) ([]byte, error)
 }
 
 func (o Option) NewKafkaHandler() slog.Handler {
@@ -48,6 +50,10 @@ func (o Option) NewKafkaHandler() slog.Handler {
 
 	if o.AttrFromContext == nil {
 		o.AttrFromContext = []func(ctx context.Context) []slog.Attr{}
+	}
+
+	if o.Marshal == nil {
+		o.Marshal = json.Marshal
 	}
 
 	return &KafkaHandler{
@@ -104,7 +110,7 @@ func (h *KafkaHandler) publish(timestamp time.Time, payload map[string]interface
 	}
 
 	// bearer:disable go_lang_deserialization_of_user_input
-	values, err := json.Marshal(payload)
+	values, err := h.option.Marshal(payload)
 	if err != nil {
 		return err
 	}
