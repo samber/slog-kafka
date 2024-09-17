@@ -97,6 +97,8 @@ type Option struct {
 
 	// optional: customize Kafka event builder
 	Converter Converter
+	// optional: custom marshaler
+	Marshaler func(v any) ([]byte, error)
 	// optional: fetch attributes from context
 	AttrFromContext []func(ctx context.Context) []slog.Attr
 

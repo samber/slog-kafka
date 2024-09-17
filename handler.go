@@ -21,14 +21,14 @@ type Option struct {
 
 	// optional: customize Kafka event builder
 	Converter Converter
+	// optional: custom marshaler
+	Marshaler func(v any) ([]byte, error)
 	// optional: fetch attributes from context
 	AttrFromContext []func(ctx context.Context) []slog.Attr
 
 	// optional: see slog.HandlerOptions
 	AddSource   bool
 	ReplaceAttr func(groups []string, a slog.Attr) slog.Attr
-
-	Marshal func(v any) ([]byte, error)
 }
 
 func (o Option) NewKafkaHandler() slog.Handler {
@@ -48,12 +48,12 @@ func (o Option) NewKafkaHandler() slog.Handler {
 		o.Converter = DefaultConverter
 	}
 
-	if o.AttrFromContext == nil {
-		o.AttrFromContext = []func(ctx context.Context) []slog.Attr{}
+	if o.Marshaler == nil {
+		o.Marshaler = json.Marshal
 	}
 
-	if o.Marshal == nil {
-		o.Marshal = json.Marshal
+	if o.AttrFromContext == nil {
+		o.AttrFromContext = []func(ctx context.Context) []slog.Attr{}
 	}
 
 	return &KafkaHandler{
@@ -110,7 +110,7 @@ func (h *KafkaHandler) publish(timestamp time.Time, payload map[string]interface
 	}
 
 	// bearer:disable go_lang_deserialization_of_user_input
-	values, err := h.option.Marshal(payload)
+	values, err := h.option.Marshaler(payload)
 	if err != nil {
 		return err
 	}
