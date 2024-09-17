@@ -1,4 +1,4 @@
 package slogkafka
 
 const name = "samber/slog-kafka"
-const version = "VERSION" // replaced by .github/workflows/release.yml
+const version = "v2.6.0" // replaced by .github/workflows/release.yml
