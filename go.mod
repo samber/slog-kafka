@@ -5,7 +5,7 @@ go 1.21
 require (
 	github.com/samber/slog-common v0.17.1
 	github.com/segmentio/kafka-go v0.4.39
-	go.uber.org/goleak v1.2.1
+	go.uber.org/goleak v1.3.0
 )
 
 require (
