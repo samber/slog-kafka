@@ -52,8 +52,10 @@ func main() {
 		}),
 	})
 
-	defer writer.Close()
-	defer conn.Close()
+	defer func() {
+		_ = writer.Close()
+		_ = conn.Close()
+	}()
 
 	logger := slog.New(slogkafka.Option{Level: slog.LevelDebug, KafkaWriter: writer}.NewKafkaHandler())
 	logger = logger.With("release", "v1.0.0")
